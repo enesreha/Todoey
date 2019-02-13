@@ -10,7 +10,7 @@ import UIKit
 
 class ToDoListViewController: UITableViewController {
     
-    let itemArray = ["Call the doctor", "Buy green tea", "Work for 5 hours"]
+    var itemArray = ["Call the doctor", "Buy green tea", "Work for 5 hours"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,5 +44,29 @@ class ToDoListViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)//when we select a row it turns gray and stays like that. we don't want this. we want it to flash gray and than disappear
         
     }
-}
+    
+    @IBAction func barButtonPressed(_ sender: UIBarButtonItem) {
+        var textField = UITextField()
+       
+        let alert = UIAlertController(title: "Add New ToDoey Item", message: "", preferredStyle: UIAlertController.Style.alert)
+        
+        let action = UIAlertAction(title: "Add Item", style: UIAlertAction.Style.default) { (action) in
+            //what will happen when the user clicks the Add Item button
+           
+            self.itemArray.append(textField.text!)
+            self.tableView.reloadData()
+        }
+        alert.addTextField { (alertTextField) in
+            alertTextField.placeholder = "Create New Item"
+            textField = alertTextField
+            
+        }
+        
+        alert.addAction(action)
+        present(alert, animated: true, completion: nil)
+            
+        }
+    }
+    
+
 
