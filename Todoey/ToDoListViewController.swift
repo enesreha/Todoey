@@ -11,10 +11,14 @@ import UIKit
 class ToDoListViewController: UITableViewController {
     
     var itemArray = ["Call the doctor", "Buy green tea", "Work for 5 hours"]
+    
+    let defaults = UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
-      
+        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {// if our ToDoListArray actually exist it's all good but if it doesn't our app will crash. So we get it in if let
+            itemArray = items
+        }
     }
     //MARK: - TableView Datasource Methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -54,6 +58,9 @@ class ToDoListViewController: UITableViewController {
             //what will happen when the user clicks the Add Item button
            
             self.itemArray.append(textField.text!)
+            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
+            //Userdefaults gets saved in plist file. Thats because everything we put in here has to be a key value pair. We add the item under a key and the we garb it back by using this key. In order to find where are our user defaults file we need to grab the file path our our sand box (every app lives in a sand box) that our app runs. We need the get the ID of the simulator and also we need the ID of the sandbox where our app lives in. In order to do that we go to didFinishLaunchingWithOptions method in AppDelegate
+            //When we add new item it doens't show up in our list because we haven't used it to retrieve the data. In order to do that we go to viewDidLoad
             self.tableView.reloadData()
         }
         alert.addTextField { (alertTextField) in
