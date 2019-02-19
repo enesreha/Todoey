@@ -8,7 +8,8 @@
 
 import Foundation
 
-class Item{
+class Item : Codable{
+    //Conforming the protocol Encodable means that the item type is now able to encode itself into a plist or inti JSON and for a class to be able to be encodable all of its propeties must have standard data types like string, integer, bool, array, dictionary etc. It can not have custom class.
     var title: String = ""
     var done : Bool = false
 }
