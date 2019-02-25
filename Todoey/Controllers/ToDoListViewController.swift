@@ -7,29 +7,27 @@
 //
 
 import UIKit
+import CoreData
 
 class ToDoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    //We're going to create a file path to the document folder
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
-    //This line of code means : default file manager is a shared file manager object. It's a singleton and this singleton contains a whole bunch of urls and they are organized by directory and domainmask. The search directory we need to tap into is the document directory. The location where we're gonna look for it is inside the userdomainmask. This is the user's home directory, the place where we're going to save their personal items associated with this current app. And because of this is an array we're going to grab its first item
+    var selectedCategory:Category? {//we set it optional because it's going to be nil until we set it. After we set the selectedCategory we're gonna loadItems
+        didSet{//everything that's between these curly braces is going to happen as soon as selectedCategory gets set with a value (we give it a value in CategoryViewController). That's because we call the loadItems method here
+            loadItems()
+            
+        }
+    }
+     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext// we're tapping into the UIApplication class. We're getting the shared singleton object which corresponds to the current app as an object. We're tapping into its delegate which has the data type of an optional UIApplicationDelegate. We're casting it into our class AppDelegate because they both inherit from the same superclass UIApplicationDelegate. And now we have access to our AppDelegate as an object. So we're able to tap into its property called persistentContainer and we're going to grab the viewContext of that persistentContainer.
+    @IBOutlet weak var searchBar: UISearchBar!
     
-  //  let defaults = UserDefaults.standard
-
     override func viewDidLoad() {
         super.viewDidLoad()
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
-       
-        print(dataFilePath)//when we follow this path we find a plist. This plist represent NSUserDefaults.
-        //Inside our app instead of using NSUserDEfaults we're going to create our very own plist file. In order to do that we go to our dataFilePath and use appoendingPathComponent method. With this method we've merely created a path to this new plist that we're going to create. So now instead of using Userdefaults we're gonna create our own plist at the location of our dataFilePath.
-
-        
-        loadItems()
-        
-
-       
-    }
+        searchBar.delegate = self
+      }
+    
     //MARK: - TableView Datasource Methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
@@ -62,33 +60,34 @@ class ToDoListViewController: UITableViewController {
     //MARK: - Tableview Delegate Methods
     //That method detects which row was selected
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //we want to set the done property to equal the opposite of what it used to be.
+        
+//        context.delete(itemArray[indexPath.row])
+//        itemArray.remove(at: indexPath.row)
+        
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         saveItems()
          
 //        //we need to get trigger the cellForRowAt method when we change the done property on our tableview. We do that with reloadDAta method. This method (reloadData) forces the tableview to call its datasource methods again and so it reloads the data.
 //        tableView.reloadData()
   
-        tableView.deselectRow(at: indexPath, animated: true)//when we select a row it turns gray and stays like that. we don't want this. we want it to flash gray and than disappear
+        tableView.deselectRow(at: indexPath, animated: true)
         
     }
     //MARK: - Add new items
     @IBAction func barButtonPressed(_ sender: UIBarButtonItem) {
+        
         var textField = UITextField()
        
         let alert = UIAlertController(title: "Add New ToDoey Item", message: "", preferredStyle: UIAlertController.Style.alert)
         
         let action = UIAlertAction(title: "Add Item", style: UIAlertAction.Style.default) { (action) in
             //what will happen when the user clicks the Add Item button
-            let newItem = Item()
-            newItem.title = textField.text!
-            self.itemArray.append(newItem)
            
-//            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-//            //when we're trying to save an array of custom objects (here Item objects) we're misusing user defaults. It crashes our app so we need to find some other way to do that. Because user defaults is for small piece of data for limited set of data types.
-//            //(Userdefaults is a property list. It has whole bunch of key value pairs.)Userdefaults gets saved in plist file. Thats because everything we put in here has to be a key value pair. We add the item under a key and the we garb it back by using this key. In order to find where are our user defaults file we need to grab the file path our our sand box (every app lives in a sand box) that our app runs. We need the get the ID of the simulator and also we need the ID of the sandbox where our app lives in. In order to do that we go to didFinishLaunchingWithOptions method in AppDelegate
-//            //When we add new item it doens't show up in our list because we haven't used it to retrieve the data. In order to do that we go to viewDidLoad
-            
+            let newItem = Item(context: self.context)
+            newItem.title = textField.text!
+            newItem.done = false
+            newItem.parentCategory = self.selectedCategory
+            self.itemArray.append(newItem)
             self.saveItems()
     
         }
@@ -102,38 +101,76 @@ class ToDoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
             
         }
+    
+    //MARK: - Model Manupulation Methods
+    
     func saveItems(){
-        let encoder = PropertyListEncoder()
+       //Here we need to be able to commit our context to permanent storage inside our persistentContainer. In order to do that we need to call try context.save(). And that basically transfers what's currently inside our staging area (context) to our permanent data storage.
         
+        //Here we set up the code to use Core Data for saving our new items that have been added using UIAlert
         do{
-            let data = try encoder.encode(itemArray)
-            //encoder will encode our data namely our itemArray into a property list.
-            try data.write(to: dataFilePath!)
-            
+            try context.save()
         }catch{
-            print("Error encoding item array, \(error)")
+            print("Error saving context \(error)")
         }
         
         
         self.tableView.reloadData()
     }
-    
-    func loadItems(){
-        //We're going to tap into our data by creating a constant called data.
+    //Here 'with' is an external parameter, 'request' is internal parameter. The internal parameter (request) is gonna be used in the blocks of this function and the external parameter (with) is going to be used when we called the function
+    func loadItems(with request : NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil){
+        //By saying (with request : NSFetchRequest<Item> = Item.fetchRequest()), we're giving a default value. So if don't provide a value for the request it's gonna use the default value.
+        //This is going to fetch results in the form of Item. This request is basically just a blank request that pulls back everything that's currently inside our persistentContainer.
+      
+        //Our items come from itemArray and itemArray comes from loadItems method which simply fetches all of the NSManagedObjects that belong in the item table or item entity. But in order for us to only load the items that have the parentCategory matching the selectedCategory we need to query our database for it and we need to filter the result. In order to do that we create a predicate. We initialize the predicate with the format that the parentCategory of all the items that we want back must have its name property matching the current selectedCategory's name. Then we need to add this predicate to the request.
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
        
-        if let data = try? Data(contentsOf: dataFilePath!){
-            let decoder = PropertyListDecoder()
-            do{
-            itemArray = try decoder.decode([Item].self, from: data)
-            }catch{
-                print("Error decoding item array, \(error)")
-            }
+        if let additionalPredicate = predicate{
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        }else{
+            request.predicate = categoryPredicate
         }
-            
-        
+
+        //Our application has to speak with context before we can do anything with our persistentContainer
+        do{
+        itemArray = try context.fetch(request)//The output of this method is going to be an array of Items that is storred in our persistentContainer.
+        }catch{
+            print("Error fetching data from context \(error)")
+        }
+        tableView.reloadData()
+    }
+
+   
+    }
+
+//MARK: - SearchBar Methods
+extension ToDoListViewController: UISearchBarDelegate{
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        //In order to read from the context we have to create a request
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
        
+        //In order to query objects using CoreData we need to use something called NSPredicate
+       let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)//we're going to look at title attribute of each of our items in itemArray and we're going to check that it contains a value (the other parameter argument is that we're going to substitute into this %@ sign). Argument is gonna be what wrote in the searchBar.
+       
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+       
+        //now we're gonna run our request and fetch our results
+       loadItems(with: request, predicate: predicate)
+     
     }
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            loadItems()
+            
+            //DispatchQueue is the manager who assigns projects to different threads. We're asking it to garb us the main thread.
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+            
+        }
     }
+}
     
 
 
