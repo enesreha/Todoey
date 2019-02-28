@@ -19,23 +19,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-//    print(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last! as String)
-        
-        //Locate where our Realm database is
-        print(Realm.Configuration.defaultConfiguration.fileURL)//This is the location of the Realm file
-      
-        //Now we're gonna use realm to save new piece of data. Realm allows us to use OOP and persist objects. So now we're creating a new data object from Data class
-        
-        let data = Data()
-        data.name = "Seyma"
-        data.age = 33
-        
+    
         //Realms like different persistent containers.
         do{
-            let realm = try Realm()
-            try realm.write {//means commit the current state to persistent storage or to our Realm database
-                realm.add(data)
-            }
+            let realm = try Realm()//we're initializing our new realm         
         }catch{
             print("Error initialising new realm \(error)")
         }

@@ -7,9 +7,12 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
+    
+    //First we need to initialize a new Realm
+    let realm = try! Realm()
     
     var categoryArray = [Category]()
     
@@ -49,24 +52,26 @@ class CategoryViewController: UITableViewController {
     }
     
     //MARK: - Data Manipulation Methods
-    func saveCategories(){
+    func save(category : Category){
         do{
-        try context.save()
+            try realm.write {
+                realm.add(category)
+            }
         }catch{
             print("Error saving categories \(error)")
         }
         tableView.reloadData()
     }
     func loadCategories(){
-        
-        let request: NSFetchRequest<Category> = Category.fetchRequest()//To be able to read data from our context we need to specify a request of a data type of NSFetchRequest that is going to return an array of Category items. And this is going to be equal to a broad request. So we want to grab all of the category objects. By saying = Category.fetchRequest(), we get back all the NSManagedObjects that were created using the Category entity
-        
-        do{
-        categoryArray = try context.fetch(request)//if fetching our request succeeds then we're going to save the output or whatever gets returned from this method into our categoryArray
-        }catch{
-          print("Error fetching data from context \(error)")
-        }
-        tableView.reloadData()
+//        
+//        let request: NSFetchRequest<Category> = Category.fetchRequest()//To be able to read data from our context we need to specify a request of a data type of NSFetchRequest that is going to return an array of Category items. And this is going to be equal to a broad request. So we want to grab all of the category objects. By saying = Category.fetchRequest(), we get back all the NSManagedObjects that were created using the Category entity
+//        
+//        do{
+//        categoryArray = try context.fetch(request)//if fetching our request succeeds then we're going to save the output or whatever gets returned from this method into our categoryArray
+//        }catch{
+//          print("Error fetching data from context \(error)")
+//        }
+//        tableView.reloadData()
     }
     
     
@@ -75,10 +80,10 @@ class CategoryViewController: UITableViewController {
         var textField = UITextField()
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
-            let newCategory = Category(context: self.context)
+            let newCategory = Category()
             newCategory.name = textField.text!
             self.categoryArray.append(newCategory)
-            self.saveCategories()
+            self.save(category: newCategory)
          }
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new category"
