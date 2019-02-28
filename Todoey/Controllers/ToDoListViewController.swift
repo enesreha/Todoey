@@ -11,6 +11,7 @@ import CoreData
 
 class ToDoListViewController: UITableViewController {
     
+    //MARK: - Constants and Variables
     var itemArray = [Item]()
     var selectedCategory:Category? {//we set it optional because it's going to be nil until we set it. After we set the selectedCategory we're gonna loadItems
         didSet{//everything that's between these curly braces is going to happen as soon as selectedCategory gets set with a value (we give it a value in CategoryViewController). That's because we call the loadItems method here
@@ -19,8 +20,11 @@ class ToDoListViewController: UITableViewController {
         }
     }
      let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext// we're tapping into the UIApplication class. We're getting the shared singleton object which corresponds to the current app as an object. We're tapping into its delegate which has the data type of an optional UIApplicationDelegate. We're casting it into our class AppDelegate because they both inherit from the same superclass UIApplicationDelegate. And now we have access to our AppDelegate as an object. So we're able to tap into its property called persistentContainer and we're going to grab the viewContext of that persistentContainer.
+    
+    //MARK: - IBOutlets
     @IBOutlet weak var searchBar: UISearchBar!
     
+    //MARK: - viewDidLoad Method
     override func viewDidLoad() {
         super.viewDidLoad()
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
@@ -149,7 +153,7 @@ extension ToDoListViewController: UISearchBarDelegate{
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         //In order to read from the context we have to create a request
         let request : NSFetchRequest<Item> = Item.fetchRequest()
-       
+      
         //In order to query objects using CoreData we need to use something called NSPredicate
        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)//we're going to look at title attribute of each of our items in itemArray and we're going to check that it contains a value (the other parameter argument is that we're going to substitute into this %@ sign). Argument is gonna be what wrote in the searchBar.
        

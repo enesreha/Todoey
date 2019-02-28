@@ -45,7 +45,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // MARK: - Core Data Saving support
     //This method saves our data when application gets terminated
     func saveContext () {
-        let context = persistentContainer.viewContext // context is an area where we can change and update our data so we can undo and redo until we're happy with our data. And the we can save the data that's in the context or in the temporary area to the container which is for permenant storege. Context is similar to the staging area in Git.
+        let context = persistentContainer.viewContext // context is an area where we can change and update our data so we can undo and redo until we're happy with our data. And then we can save the data that's in the context or in the temporary area to the container which is for permenant storege. Context is similar to the staging area in Git.
         if context.hasChanges {
             do {
                 try context.save()
